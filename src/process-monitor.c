@@ -21,11 +21,13 @@
 #include <glibtop.h>
 #include <glibtop/proclist.h>
 #include <glibtop/procstate.h>
+#include <glibtop/procuid.h>
 
 int main(void)
 {
 	glibtop_proclist proclist;
 	glibtop_proc_state procstate;
+	glibtop_proc_uid procuid;
 	pid_t *list = NULL;
 	unsigned long int i = 0;
 	
@@ -36,8 +38,9 @@ int main(void)
 	for(i = 0; i < proclist.number; i++)
 	{
 		glibtop_get_proc_state(&procstate, list[i]);
+		glibtop_get_proc_uid(&procuid, list[i]);
 		
-		printf("%6i: %40s %i\n", list[i], procstate.cmd, procstate.state);
+		printf("%6i: %40s %i %6i\n", list[i], procstate.cmd, procstate.state, procuid.ppid);
 	}
 	
 	g_free(list);
