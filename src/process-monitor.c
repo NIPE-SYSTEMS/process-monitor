@@ -80,10 +80,10 @@ void process_print(struct process *proc, int shift)
 	
 	for(i = 0; i < shift; i++)
 	{
-		printf("  ");
+		printf("      ");
 	}
 	
-	printf("%i\n", proc->pid);
+	printf("%6i\n", proc->pid);
 	
 	if(proc->child != NULL)
 	{
@@ -135,19 +135,12 @@ struct process *process_last(struct process *first)
 
 struct process *process_last_child(struct process *first_child)
 {
-	struct process *pointer = first_child;
-	
-	if(first_child == NULL)
+	if(first_child == NULL || first_child->child == NULL)
 	{
-		return NULL;
+		return first_child;
 	}
 	
-	while(pointer->child != NULL)
-	{
-		pointer = pointer->child;
-	}
-	
-	return pointer;
+	return process_last(first_child->child);
 }
 
 int process_count(struct process *proc)
@@ -166,52 +159,109 @@ int process_count(struct process *proc)
 
 int process_count_children(struct process *proc)
 {
-	int i = 0;
-	struct process *pointer = proc;
-	
-	while(pointer->child != NULL)
+	if(proc == NULL || proc->child == NULL)
 	{
-		i++;
-		pointer = pointer->child;
+		return 0;
 	}
 	
-	return i;
+	return process_count(proc->child) + 1;
+}
+
+struct process *process_search_pid(struct process *proc, pid_t pid)
+{
+	struct process *found_proc = NULL;
+	
+	if(proc == NULL)
+	{
+		return NULL;
+	}
+	
+	if(proc->pid == pid)
+	{
+		return proc;
+	}
+	
+	if(proc->next != NULL)
+	{
+		found_proc = process_search_pid(proc->next, pid);
+		
+		if(found_proc != NULL)
+		{
+			return found_proc;
+		}
+	}
+	
+	if(proc->child != NULL)
+	{
+		found_proc = process_search_pid(proc->child, pid);
+		
+		if(found_proc != NULL)
+		{
+			return found_proc;
+		}
+	}
+	
+	return NULL;
 }
 
 int main(void)
 {
-	// glibtop_proclist proclist;
-	// glibtop_proc_state procstate;
-	// glibtop_proc_uid procuid;
-	// pid_t *list = NULL;
-	// unsigned long int i = 0;
+	glibtop_proclist proclist;
+	glibtop_proc_state procstate;
+	glibtop_proc_uid procuid;
+	pid_t *list = NULL;
+	unsigned long int i = 0;
 	
-	// glibtop_init();
+	struct process *root_proc = NULL;
+	struct process *temp_proc = NULL;
+	struct process *found_proc = NULL;
+	struct process *last_proc = NULL;
 	
-	// list = glibtop_get_proclist(&proclist, 0, 0);
+	glibtop_init();
 	
-	// for(i = 0; i < proclist.number; i++)
-	// {
-	// 	glibtop_get_proc_state(&procstate, list[i]);
-	// 	glibtop_get_proc_uid(&procuid, list[i]);
+	list = glibtop_get_proclist(&proclist, 0, 0);
+	
+	if(proclist.number > 0)
+	{
+		glibtop_get_proc_state(&procstate, list[0]);
+		glibtop_get_proc_uid(&procuid, list[0]);
 		
-	// 	printf("%6i: %40s %i %6i\n", list[i], procstate.cmd, procstate.state, procuid.ppid);
-	// }
+		root_proc = process_new(list[0], procuid.ppid, procstate.cmd);
+	}
 	
-	// g_free(list);
+	if(proclist.number > 1)
+	{
+		for(i = 1; i < proclist.number; i++)
+		{
+			glibtop_get_proc_state(&procstate, list[i]);
+			glibtop_get_proc_uid(&procuid, list[i]);
+			
+			temp_proc = process_new(list[i], procuid.ppid, procstate.cmd);
+			if(procuid.ppid == 0)
+			{
+				process_append(process_last(root_proc), temp_proc);
+			}
+			else
+			{
+				found_proc = process_search_pid(root_proc, procuid.ppid);
+				if(found_proc != NULL)
+				{
+					if(process_count_children(found_proc) == 0)
+					{
+						process_append_child(found_proc, temp_proc);
+					}
+					else
+					{
+						process_append(process_last_child(found_proc), temp_proc);
+					}
+				}
+			}
+		}
+	}
 	
-	struct process *root_proc = process_new(1, 0, "Test");
-	struct process *next_proc0 = process_new(2, 0, "Test2");
-	struct process *next_proc1 = process_new(3, 0, "Test3");
-	struct process *next_proc2 = process_new(4, 0, "Test4");
-	process_append(process_last(root_proc), next_proc0);
-	process_append(process_last(root_proc), next_proc1);
-	process_append_child(process_last_child(root_proc), next_proc2);
+	g_free(list);
 	
 	process_print(root_proc, 0);
-	
-	printf("Last PID: %i, last child PID: %p, %i, %i\n", process_last(root_proc)->pid, process_last_child(root_proc), process_count(root_proc), process_count_children(root_proc));
-	printf("Last PID: %i, last child PID: %p, %i, %i\n", process_last(root_proc)->pid, process_last_child(root_proc), process_count(root_proc), process_count_children(root_proc));
 	
 	process_free(root_proc);
 	
