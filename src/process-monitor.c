@@ -17,10 +17,30 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <glibtop.h>
+#include <glibtop/proclist.h>
+#include <glibtop/procstate.h>
 
 int main(void)
 {
-	printf("Hello World!\n");
+	glibtop_proclist proclist;
+	glibtop_proc_state procstate;
+	pid_t *list = NULL;
+	unsigned long int i = 0;
+	
+	glibtop_init();
+	
+	list = glibtop_get_proclist(&proclist, 0, 0);
+	
+	for(i = 0; i < proclist.number; i++)
+	{
+		glibtop_get_proc_state(&procstate, list[i]);
+		
+		printf("%6i: %40s %i\n", list[i], procstate.cmd, procstate.state);
+	}
+	
+	g_free(list);
 	
 	return 0;
 }

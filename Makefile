@@ -17,9 +17,9 @@ CC = gcc
 
 CFLAGS += -Wall
 CFLAGS += -Wextra
-CFLAGS += `pkg-config --cflags glib-2.0`
+CFLAGS += `pkg-config --cflags libgtop-2.0`
 
-LIBS += `pkg-config --libs glib-2.0`
+LIBS += `pkg-config --libs libgtop-2.0`
 
 .PHONY: all process-monitor init clean
 
