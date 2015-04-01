@@ -17,9 +17,11 @@ CC = gcc
 
 CFLAGS += -Wall
 CFLAGS += -Wextra
-CFLAGS += `pkg-config --cflags libgtop-2.0`
+CFLAGS += `pkg-config --cflags glib-2.0`
+CFLAGS += `pkg-config --cflags gio-2.0`
 
-LIBS += `pkg-config --libs libgtop-2.0`
+LIBS += `pkg-config --libs glib-2.0`
+LIBS += `pkg-config --libs gio-2.0`
 
 .PHONY: all process-monitor init clean
 
@@ -27,8 +29,8 @@ all: process-monitor
 
 # Compile main program
 
-process-monitor: init bin/obj/process-monitor.o
-	$(CC) bin/obj/process-monitor.o $(CFLAGS) -o bin/process-monitor $(LIBS)
+process-monitor: init bin/obj/process-monitor.o bin/obj/process_retrieve.o
+	$(CC) bin/obj/process-monitor.o bin/obj/process_retrieve.o $(CFLAGS) -o bin/process-monitor $(LIBS)
 
 # Initializes directories
 
@@ -41,20 +43,8 @@ init:
 bin/obj/process-monitor.o: src/process-monitor.c
 	$(CC) $(CFLAGS) -c -o bin/obj/process-monitor.o src/process-monitor.c $(LIBS)
 
-bin/obj/walk.o: src/walk.c
-	$(CC) $(CFLAGS) -c -o bin/obj/walk.o src/walk.c $(LIBS)
-
-bin/obj/processor.o: src/processor.c
-	$(CC) $(CFLAGS) -c -o bin/obj/processor.o src/processor.c $(LIBS)
-
-bin/obj/path_helper.o: src/path_helper.c
-	$(CC) $(CFLAGS) -c -o bin/obj/path_helper.o src/path_helper.c $(LIBS)
-
-bin/obj/archive.o: src/archive.c
-	$(CC) $(CFLAGS) -c -o bin/obj/archive.o src/archive.c $(LIBS)
-
-bin/obj/arguments.o: src/arguments.c
-	$(CC) $(CFLAGS) -c -o bin/obj/arguments.o src/arguments.c $(LIBS)
+bin/obj/process_retrieve.o: src/process_retrieve.c
+	$(CC) $(CFLAGS) -c -o bin/obj/process_retrieve.o src/process_retrieve.c $(LIBS)
 
 # Clean
 
