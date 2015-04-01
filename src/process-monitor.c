@@ -44,7 +44,7 @@ typedef struct
 	char *command;
 	process_monitor_t monitor;
 	process_monitor_action_t action;
-	char **args;
+	char *args;
 } process_monitor_job_t;
 
 static process_t *process_root = NULL;
@@ -289,7 +289,8 @@ void process_monitor_job_add(pid_t pid, process_monitor_t monitor, process_monit
 	glibtop_proc_uid procuid;
 	glibtop_proc_args procargs;
 	process_monitor_job_t *job_list_backup = process_monitor_job_list;
-	char **args = NULL;
+	char *args = NULL;
+	unsigned long int i = 0;
 	
 	if(process_monitor_job_list == NULL)
 	{
@@ -317,10 +318,31 @@ void process_monitor_job_add(pid_t pid, process_monitor_t monitor, process_monit
 	
 	glibtop_get_proc_state(&procstate, pid);
 	glibtop_get_proc_uid(&procuid, pid);
-	args = glibtop_get_proc_argv(&procargs, pid, 0);
+	args = glibtop_get_proc_args(&procargs, pid, 0);
+	
+	// concatenate args parts together
+	if(args != NULL && procargs.size > 0)
+	{
+		for(i = 0; i < procargs.size - 1; i++)
+		{
+			if(args[i] == '\0')
+			{
+				args[i] = ' ';
+			}
+		}
+	}
 	
 	process_monitor_job_list[process_monitor_job_list_amount - 1].pid = pid;
-	process_monitor_job_list[process_monitor_job_list_amount - 1].command = strdup(procstate.cmd);
+	
+	if(procstate.cmd == NULL)
+	{
+		process_monitor_job_list[process_monitor_job_list_amount - 1].command = NULL;
+	}
+	else
+	{
+		process_monitor_job_list[process_monitor_job_list_amount - 1].command = strdup(procstate.cmd);
+	}
+	
 	process_monitor_job_list[process_monitor_job_list_amount - 1].monitor = monitor;
 	process_monitor_job_list[process_monitor_job_list_amount - 1].action = action;
 	process_monitor_job_list[process_monitor_job_list_amount - 1].args = args;
@@ -343,7 +365,7 @@ void process_monitor_job_cleanup(void)
 	for(i = 0; i < process_monitor_job_list_amount; i++)
 	{
 		free(process_monitor_job_list[i].command);
-		g_strfreev(process_monitor_job_list[i].args);
+		free(process_monitor_job_list[i].args);
 	}
 	
 	free(process_monitor_job_list);
