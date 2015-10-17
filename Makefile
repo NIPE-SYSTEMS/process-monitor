@@ -20,17 +20,23 @@ CFLAGS += -Wextra
 CFLAGS += `pkg-config --cflags glib-2.0`
 CFLAGS += `pkg-config --cflags gio-2.0`
 
+CFLAGS_WAIT += -Wall
+CFLAGS_WAIT += -Wextra
+
 LIBS += `pkg-config --libs glib-2.0`
 LIBS += `pkg-config --libs gio-2.0`
 
 .PHONY: all process-monitor init clean
 
-all: process-monitor
+all: process-monitor wait
 
 # Compile main program
 
 process-monitor: init bin/obj/process-monitor.o bin/obj/process_retrieve.o
 	$(CC) bin/obj/process-monitor.o bin/obj/process_retrieve.o $(CFLAGS) -o bin/process-monitor $(LIBS)
+
+wait: init src/wait.c
+	$(CC) src/wait.c $(CFLAGS_WAIT) -o bin/wait
 
 # Initializes directories
 
